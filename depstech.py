@@ -25,8 +25,6 @@ def encode_index(sequence, img_size):
     r0 ^= img_size
     return r0 % img_size
 
-sent = 9999999
-
 while True:
     if datetime.datetime.now() > next_send:
         udp_sock.sendto(payload, ('192.168.10.123', 8030))
@@ -36,21 +34,19 @@ while True:
     if data[2] == 3:
         mjpeg_data = bytearray(data[0x33:])
 
-        (frame, ) = struct.unpack('<H', data[0x27:0x29])
+        (frame, ) = struct.unpack('<I', data[0x27:0x2B])
         (chunk, ) = struct.unpack('<H', data[0x21:0x23])
-        (frame_size, ) = struct.unpack('<H', data[0x1D:0x1F])
+        (frame_size, ) = struct.unpack('<I', data[0x1D:0x21])
         chunk_size = len(mjpeg_data)
-        if chunk == 1:
-            sent = 0
         
         flipped_index = encode_index(frame, frame_size)
 
-        if flipped_index > sent and flipped_index < sent + chunk_size:
-            local_flip_index = flipped_index - sent
+        mjpeg_chunk_offset = (chunk - 1) * 0x56e
+        if flipped_index > mjpeg_chunk_offset and flipped_index < mjpeg_chunk_offset + chunk_size:
+            local_flip_index = flipped_index - mjpeg_chunk_offset
             mjpeg_data[local_flip_index] ^= 0xff
 
         conn.sendall(mjpeg_data)
-        sent += chunk_size
 
 # close the socket
 udp_sock.close()
