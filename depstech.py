@@ -19,11 +19,8 @@ udp_sock.sendto(payload, ('192.168.10.123', 8030))
 next_send = datetime.datetime.now() + datetime.timedelta(0,1)
 
 def encode_index(sequence, img_size):
-    r0 = sequence ^ img_size
-    r2 = 1 & (img_size ^ 0xff)
-    r0 += img_size + r2
-    r0 ^= img_size
-    return r0 % img_size
+    ret = (sequence ^ img_size) + img_size ^ img_size
+    return ret % img_size
 
 while True:
     if datetime.datetime.now() > next_send:
